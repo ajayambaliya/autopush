@@ -42,17 +42,18 @@ class OneSignal {
     if (!this.androidChannelId) {
       throw new Error("ONESIGNAL_ANDROID_CHANNEL_ID is not set in environment variables.");
     }
+    console.log("Using android_channel_id:", this.androidChannelId);
   }
 
   async sendNotification(title, body) {
     const payload = {
       app_id: this.appId,
-      included_segments: ["All"], // Send to all subscribed users
+      included_segments: ["All"],
       headings: { en: title },
       contents: { en: body },
-      android_channel_id: this.androidChannelId, // Use the secret-defined channel ID
-      small_icon: "ic_stat_onesignal_default", // Optional: Customize icon
-      data: { action: "open_activity" }, // Optional: Custom data for the app
+      android_channel_id: this.androidChannelId,
+      small_icon: "ic_stat_onesignal_default",
+      data: { action: "open_activity" },
     };
 
     try {
@@ -70,6 +71,24 @@ class OneSignal {
       );
       if (error.response && error.response.data.errors.includes("Could not find android_channel_id")) {
         console.error("Check if the android_channel_id matches a valid channel in OneSignal dashboard.");
+        console.error("Attempting to send notification without android_channel_id as a fallback...");
+        // Fallback: Retry without android_channel_id
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.android_channel_id;
+        try {
+          const fallbackResponse = await axios.post(this.baseUrl, fallbackPayload, {
+            headers: {
+              Authorization: `Basic ${this.apiKey}`,
+              "Content-Type": "application/json",
+            },
+          });
+          console.log("Fallback notification sent successfully:", fallbackResponse.data);
+        } catch (fallbackError) {
+          console.error(
+            "Fallback notification failed:",
+            fallbackError.response ? fallbackError.response.data : fallbackError.message
+          );
+        }
       }
     }
   }
@@ -86,7 +105,6 @@ async function scheduleNotifications() {
   const oneSignal = new OneSignal(process.env.ONESIGNAL_APP_ID, process.env.ONESIGNAL_API_KEY);
 
   try {
-    // Step 1: Fetch one random post from the last 7 days
     const query = `
       SELECT news_title, news_description, news_date 
       FROM tbl_news 
@@ -105,7 +123,6 @@ async function scheduleNotifications() {
     const post = posts[0];
     console.log("Selected post:", post.news_title);
 
-    // Step 2: Choose a random time window for the notification
     const timeWindows = [
       { start: 8, end: 9, label: "🌞 Morning Update" },
       { start: 12, end: 13, label: "🍴 Lunchtime News" },
@@ -118,17 +135,13 @@ async function scheduleNotifications() {
     const minute = Math.floor(Math.random() * 60);
     const scheduledTime = formatTime(hour, minute);
 
-    // Step 3: Enhance the notification with eye-catchy elements
     const title = `${window.label}: ${post.news_title} 🚀`;
     let body = post.news_description.substring(0, 100);
-    // Remove HTML tags for clean notification text
     body = body.replace(/<[^>]+>/g, "");
     body = `${body}... Tap to read more! 📖`;
 
-    // Step 4: Log the scheduled notification
     console.log(`Scheduled for ${scheduledTime} IST: ${title} - ${body}`);
 
-    // Step 5: Send the notification immediately using OneSignal
     await oneSignal.sendNotification(title, body);
   } catch (err) {
     console.error("Function execution error:", err.message);
@@ -137,5 +150,4 @@ async function scheduleNotifications() {
   }
 }
 
-// Run the function
 scheduleNotifications();
