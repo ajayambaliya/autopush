@@ -38,7 +38,10 @@ class OneSignal {
     this.appId = appId;
     this.apiKey = apiKey;
     this.baseUrl = "https://onesignal.com/api/v1/notifications";
-    this.defaultChannelId = process.env.ONESIGNAL_ANDROID_CHANNEL_ID || "default_channel"; // Fallback to 'default_channel'
+    this.androidChannelId = process.env.ONESIGNAL_ANDROID_CHANNEL_ID;
+    if (!this.androidChannelId) {
+      throw new Error("ONESIGNAL_ANDROID_CHANNEL_ID is not set in environment variables.");
+    }
   }
 
   async sendNotification(title, body) {
@@ -47,7 +50,7 @@ class OneSignal {
       included_segments: ["All"], // Send to all subscribed users
       headings: { en: title },
       contents: { en: body },
-      android_channel_id: this.defaultChannelId, // Use the configured channel ID
+      android_channel_id: this.androidChannelId, // Use the secret-defined channel ID
       small_icon: "ic_stat_onesignal_default", // Optional: Customize icon
       data: { action: "open_activity" }, // Optional: Custom data for the app
     };
@@ -61,7 +64,13 @@ class OneSignal {
       });
       console.log("Notification sent successfully:", response.data);
     } catch (error) {
-      console.error("Error sending notification:", error.response ? error.response.data : error.message);
+      console.error(
+        "Error sending notification:",
+        error.response ? error.response.data : error.message
+      );
+      if (error.response && error.response.data.errors.includes("Could not find android_channel_id")) {
+        console.error("Check if the android_channel_id matches a valid channel in OneSignal dashboard.");
+      }
     }
   }
 }
@@ -122,7 +131,7 @@ async function scheduleNotifications() {
     // Step 5: Send the notification immediately using OneSignal
     await oneSignal.sendNotification(title, body);
   } catch (err) {
-    console.error("Function execution error:", err);
+    console.error("Function execution error:", err.message);
   } finally {
     db.close();
   }
