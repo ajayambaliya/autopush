@@ -38,6 +38,7 @@ class OneSignal {
     this.appId = appId;
     this.apiKey = apiKey;
     this.baseUrl = "https://onesignal.com/api/v1/notifications";
+    this.defaultChannelId = process.env.ONESIGNAL_ANDROID_CHANNEL_ID || "default_channel"; // Fallback to 'default_channel'
   }
 
   async sendNotification(title, body) {
@@ -46,7 +47,7 @@ class OneSignal {
       included_segments: ["All"], // Send to all subscribed users
       headings: { en: title },
       contents: { en: body },
-      android_channel_id: "default", // Optional: Set your Android notification channel
+      android_channel_id: this.defaultChannelId, // Use the configured channel ID
       small_icon: "ic_stat_onesignal_default", // Optional: Customize icon
       data: { action: "open_activity" }, // Optional: Custom data for the app
     };
