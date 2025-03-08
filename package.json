@@ -1,0 +1,16 @@
+{
+  "name": "testbook-notifications",
+  "version": "1.0.0",
+  "description": "Scheduled notifications for Testbook API",
+  "main": "scheduleNotifications.js",
+  "scripts": {
+    "start": "node scheduleNotifications.js",
+    "test": "echo \"No tests specified\""
+  },
+  "dependencies": {
+    "mysql": "^2.18.1",
+    "dotenv": "^16.0.0"
+  },
+  "author": "LordKrishna",
+  "license": "MIT"
+}
