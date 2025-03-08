@@ -3,6 +3,7 @@ name: Schedule Notifications
 on:
   schedule:
     - cron: '30 0 * * *' # Runs at 5:30 AM IST (midnight UTC + 5:30)
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   run-notifications:
